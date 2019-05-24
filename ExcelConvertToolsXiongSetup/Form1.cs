@@ -2,6 +2,7 @@
 using System.Data;
 using System.IO;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace ExcelConvertToolsXiongSetup
 {
@@ -22,78 +23,94 @@ namespace ExcelConvertToolsXiongSetup
             dataGridView1.DataSource = null;
             dataGridView2.DataSource = null;
             dataGridView3.DataSource = null;
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = @"All files (*.*)|*.*|txt files (*.xlsx)|*.xlsx";
-            openFileDialog.FilterIndex = 2;
-            openFileDialog.RestoreDirectory = false;
-            if (openFileDialog.ShowDialog((IWin32Window)this) == DialogResult.OK)
-                _fileName = openFileDialog.FileName;
-            string str1 = Environment.CurrentDirectory + "\\列转换配置.xlsx";
-            if (!File.Exists(str1))
+            OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                int num1 = (int)MessageBox.Show(str1 + @"出现配置文件不存在的致命错误,请恢复配置文件后再操作!\r\n");
+                Filter = @"All files (*.*)|*.*|txt files (*.xlsx)|*.xlsx",
+                FilterIndex = 2,
+                RestoreDirectory = false
+            };
+            if (openFileDialog.ShowDialog() == DialogResult.OK) _fileName = openFileDialog.FileName;
+
+            string configFile = Environment.CurrentDirectory + "\\列转换配置.xlsx";
+            if (!File.Exists(configFile))
+            {
+                MessageBox.Show(configFile + @"出现配置文件不存在的致命错误,请恢复配置文件后再操作!\r\n");
+                return;
             }
-            else
+
+            DataTable configTable = ExcelOpenXml.GetSheet(configFile, "Sheet1");
+            DataTable configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
+
+            //配置文件Sheet1 列
+            var cofingList = configTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName.Trim().ToLower()).ToList();
+            //配置文件Sheet2 数据
+            var columnsList = configMappingTable.Rows.Cast<DataRow>().Select(x => new { ChargeCurrency = x[0].ToString().Trim().ToLower(), ChargeCode = x[1].ToString().Trim().ToLower(), Columns = x[2].ToString().Trim().ToLower() }).ToList();
+            var errConfig = columnsList.Where(x => !cofingList.Contains(x.Columns)).Select(x => x.Columns);
+
+            if (errConfig.Any())
             {
-                DataTable sheet1 = ExcelOpenXml.GetSheet(str1, "Sheet1");
-                DataTable sheet2 = ExcelOpenXml.GetSheet(_fileName, "Sheet1");
-                if (sheet2.Rows.Count < 3)
+                MessageBox.Show($"配置文件出现致命错误!!! \r\n 以下表[Sheet2].列[Columns]中的数据未在表[Sheet1]中查找到 \r\n {string.Join("\r\n", errConfig)}");
+                return;
+            }
+
+
+            DataTable dataTable = ExcelOpenXml.GetSheet(_fileName, "Sheet0");
+            if (dataTable.Rows.Count < 3)
+            {
+                MessageBox.Show(@"未读取到数据");
+                return;
+            }
+
+            for (int i = 0; i < dataTable.Columns.Count; i++)
+            {
+                string row0 = dataTable.Rows[0][i].ToString().Trim();
+                string row1 = dataTable.Rows[1][i].ToString().Trim();
+                if (row0.Length > 0 && row1.Length == 0)
+                    dataTable.Columns[i].ColumnName = row0;
+                if (row0.Length > 0 && row1.Length > 0)
+                    dataTable.Columns[i].ColumnName = row1;
+                if (row0.Length == 0 && row1.Length > 0)
+                    dataTable.Columns[i].ColumnName = row1;
+                dataTable.Columns[i].ColumnName = dataTable.Columns[i].ColumnName.Replace("\r", " ").Replace("\n", " ");
+            }
+            dataTable.Rows.RemoveAt(0);
+            dataTable.Rows.RemoveAt(0);
+            _targetTable = new DataTable("Sheet1");
+            _targetTable = configTable.Clone();
+            _targetTable.TableName = "Sheet1";
+            for (int i = 0; i < dataTable.Rows.Count; i++)
+            {
+                DataRow row = _targetTable.NewRow();
+                for (int j = 0; j < configTable.Columns.Count; j++)
                 {
-                    int num2 = (int)MessageBox.Show(@"未读取到数据");
-                }
-                else
-                {
-                    for (int index = 0; index < sheet2.Columns.Count; ++index)
+                    for (int k = 0; k < dataTable.Columns.Count; k++)
                     {
-                        string str2 = sheet2.Rows[0][index].ToString().Trim();
-                        string str3 = sheet2.Rows[1][index].ToString().Trim();
-                        if (str2.Length > 0 && str3.Length == 0)
-                            sheet2.Columns[index].ColumnName = str2;
-                        if (str2.Length > 0 && str3.Length > 0)
-                            sheet2.Columns[index].ColumnName = str3;
-                        if (str2.Length == 0 && str3.Length > 0)
-                            sheet2.Columns[index].ColumnName = str3;
-                    }
-                    sheet2.Rows.RemoveAt(0);
-                    sheet2.Rows.RemoveAt(0);
-                    _targetTable = new DataTable("Sheet1");
-                    _targetTable = sheet1.Clone();
-                    _targetTable.TableName = "Sheet1";
-                    for (int index1 = 0; index1 < sheet2.Rows.Count; ++index1)
-                    {
-                        DataRow row = _targetTable.NewRow();
-                        for (int index2 = 0; index2 < sheet1.Columns.Count; ++index2)
+                        if (configTable.Rows[0][j].ToString().Trim().ToLower() == dataTable.Columns[k].ColumnName.Trim().ToLower())
                         {
-                            for (int index3 = 0; index3 < sheet2.Columns.Count; ++index3)
-                            {
-                                sheet1.Rows[0][index2].ToString();
-                                string columnName = sheet2.Columns[index3].ColumnName;
-                                if (sheet1.Rows[0][index2].ToString().Trim().ToLower() == sheet2.Columns[index3].ColumnName.Trim().ToLower())
-                                {
-                                    Console.WriteLine(sheet2.Columns[index3].ColumnName.Trim().ToLower());
-                                    row[index2] = sheet2.Rows[index1][index3];
-                                }
-                            }
+                            Console.WriteLine(dataTable.Columns[k].ColumnName.Trim().ToLower());
+                            row[j] = dataTable.Rows[i][k];
                         }
-                        _targetTable.Rows.Add(row);
                     }
-                    dataGridView1.DataSource = sheet1;
-                    dataGridView2.DataSource = sheet2;
-                    dataGridView3.DataSource = _targetTable;
                 }
+                var targetColumnName = columnsList.FirstOrDefault(x => x.ChargeCurrency == dataTable.Rows[i]["Charge Currency"].ToString().Trim() && x.ChargeCode == dataTable.Rows[i]["Charge Code"].ToString())?.Columns;
+                if (cofingList.Any(x => x.Contains(targetColumnName ?? "abcdefghigk123")))
+                    dataTable.Rows[i][targetColumnName ?? ""] = dataTable.Rows[i]["Charge Amount"];
+                _targetTable.Rows.Add(row);
             }
+            dataGridView1.DataSource = configTable;
+            dataGridView2.DataSource = dataTable;
+            dataGridView3.DataSource = _targetTable;
         }
 
         private void Button2_Click(object sender, EventArgs e)
         {
             string path = Environment.CurrentDirectory + "\\转换结果";
-            if (!Directory.Exists(path))
-                Directory.CreateDirectory(path);
+            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
             ExcelOpenXml.Create($@"{path}\{Path.GetFileNameWithoutExtension(_fileName)}.{DateTime.Now:yyyy.MM.dd.HH.mm.ss}.xlsx", new DataSet()
             {
-                Tables = {_targetTable}
+                Tables = { _targetTable }
             });
-            int num = (int)MessageBox.Show(@"转换完成!");
+            MessageBox.Show(@"转换完成!");
         }
     }
 }

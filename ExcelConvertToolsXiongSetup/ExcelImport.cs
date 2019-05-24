@@ -114,7 +114,7 @@ namespace ExcelConvertToolsXiongSetup
             using (SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Open(filename, false))
             {
                 WorkbookPart workbookPart = spreadsheetDocument.WorkbookPart;
-                Sheet sheet = workbookPart.Workbook.Descendants<Sheet>().FirstOrDefault<Sheet>();
+                Sheet sheet = workbookPart.Workbook.Descendants<Sheet>().FirstOrDefault<Sheet>(x => sheetName.Length > 0 ? x.Name == sheetName : x.Name.Value.Length > 0);
                 if (sheet == null)
                     throw new ArgumentException("未能找到" + sheetName + " sheet 页");
                 SharedStringTablePart sharedStringTablePart = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault<SharedStringTablePart>();
