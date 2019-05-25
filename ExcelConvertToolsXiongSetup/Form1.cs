@@ -14,6 +14,11 @@ namespace ExcelConvertToolsXiongSetup
         public Form1()
         {
             InitializeComponent();
+            dataGridView2.RowHeadersWidth = 70;
+            dataGridView3.RowHeadersWidth = 70;
+            dataGridView1.RowStateChanged += RowStateChanged;
+            dataGridView2.RowStateChanged += RowStateChanged;
+            dataGridView3.RowStateChanged += RowStateChanged;
         }
 
         private void Button1_Click(object sender, EventArgs e)
@@ -42,10 +47,11 @@ namespace ExcelConvertToolsXiongSetup
             DataTable configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
 
             //配置文件Sheet1 列
-            var cofingList = configTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName.Trim().ToLower()).ToList();
+            var cofingList = configTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName.Trim()).ToList();
             //配置文件Sheet2 数据
-            var columnsList = configMappingTable.Rows.Cast<DataRow>().Select(x => new { ChargeCurrency = x[0].ToString().Trim().ToLower(), ChargeCode = x[1].ToString().Trim().ToLower(), Columns = x[2].ToString().Trim().ToLower() }).ToList();
-            var errConfig = columnsList.Where(x => !cofingList.Contains(x.Columns)).Select(x => x.Columns);
+            var columnsList = configMappingTable.Rows.Cast<DataRow>().Select(x => new { ChargeCurrency = x[0].ToString().Trim(), ChargeCode = x[1].ToString().Trim(), Columns = x[2].ToString().Trim() }).ToList();
+            var cofingListToLower = cofingList.Select(x => x.ToLower());
+            var errConfig = columnsList.Where(x => !cofingListToLower.Contains(x.Columns.ToLower())).Select(x => x.Columns);
 
             if (errConfig.Any())
             {
@@ -92,10 +98,22 @@ namespace ExcelConvertToolsXiongSetup
                         }
                     }
                 }
-                var targetColumnName = columnsList.FirstOrDefault(x => x.ChargeCurrency == dataTable.Rows[i]["Charge Currency"].ToString().Trim() && x.ChargeCode == dataTable.Rows[i]["Charge Code"].ToString())?.Columns;
+                //  Charge Currency	Charge Code 行列转换
+                var targetColumnName = columnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == dataTable.Rows[i]["Charge Currency"].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == dataTable.Rows[i]["Charge Code"].ToString().ToLower())?.Columns;
                 if (cofingList.Any(x => x.Contains(targetColumnName ?? "abcdefghigk123")))
-                    dataTable.Rows[i][targetColumnName ?? ""] = dataTable.Rows[i]["Charge Amount"];
+                    row[targetColumnName ?? ""] = dataTable.Rows[i]["Charge Amount"];
                 _targetTable.Rows.Add(row);
+
+                //通过BL nr. 列判断 blvposno的计数,从1开始计数，每行++1 直到[BL nr. 列]和上一行不一致后,重新从1开始计数
+                if (cofingListToLower.Contains(@"blvposno") && cofingListToLower.Contains("BL nr.".ToLower()))
+                {
+                    int blvposno = 1;
+                    if (i > 0 && i < dataTable.Rows.Count)
+                        blvposno = _targetTable.Rows[i]["BL nr."].ToString().ToLower() == _targetTable.Rows[i - 1]["BL nr."].ToString().ToLower()
+                                    ? int.Parse(_targetTable.Rows[i - 1]["blvposno"].ToString()) + 1
+                                    : 1;
+                    _targetTable.Rows[i]["blvposno"] = blvposno;
+                }
             }
             dataGridView1.DataSource = configTable;
             dataGridView2.DataSource = dataTable;
@@ -111,6 +129,12 @@ namespace ExcelConvertToolsXiongSetup
                 Tables = { _targetTable }
             });
             MessageBox.Show(@"转换完成!");
+        }
+
+
+        private void RowStateChanged(object sender, DataGridViewRowStateChangedEventArgs e)
+        {
+            e.Row.HeaderCell.Value = $"{e.Row.Index + 1}";
         }
     }
 }

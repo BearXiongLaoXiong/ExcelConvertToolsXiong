@@ -8,37 +8,14 @@ using System.Linq;
 
 namespace ExcelConvertToolsXiongSetup
 {
-    public class ExcelImport
-    {
-        public static void Import(string path)
-        {
-            DataTable dataTable = new DataTable();
-            using (SpreadsheetDocument document = SpreadsheetDocument.Open(path, false))
-            {
-                WorkbookPart workbookPart = document.WorkbookPart;
-                string id = document.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>().First<Sheet>().Id.Value;
-                Row[] array = ((WorksheetPart)document.WorkbookPart.GetPartById(id)).Worksheet.GetFirstChild<SheetData>().Descendants<Row>().ToArray<Row>();
-                foreach (Cell cell in (OpenXmlElement)((IEnumerable<Row>)array).ElementAt<Row>(0))
-                    dataTable.Columns.Add(ExcelImport.GetCellValue(document, cell));
-                for (int index1 = 1; index1 < ((IEnumerable<Row>)array).Count<Row>(); ++index1)
-                {
-                    DataRow row = dataTable.NewRow();
-                    for (int index2 = 0; index2 < array[index1].Descendants<Cell>().Count<Cell>(); ++index2)
-                        row[index2] = (object)ExcelImport.GetCellValue(document, array[index1].Descendants<Cell>().ElementAt<Cell>(index2));
-                    dataTable.Rows.Add(row);
-                }
-            }
-        }
+    //    使用：
 
-        public static string GetCellValue(SpreadsheetDocument document, Cell cell)
-        {
-            SharedStringTablePart sharedStringTablePart = document.WorkbookPart.SharedStringTablePart;
-            string s = cell?.CellValue?.InnerXml ?? "";
-            if (cell.DataType != null && (cell.DataType.Value == CellValues.SharedString || cell.DataType.Value == CellValues.String || cell.DataType.Value == CellValues.Number))
-                return sharedStringTablePart.SharedStringTable.ChildElements[int.Parse(s)].InnerText;
-            return s;
-        }
-    }
+    //    object[] objTitle = new object[] { "SIM", "ICCID" };
+    //string descFile = "d:\\test.xlsx";
+    //using (var oxExt = new ExcelUtil.ExcelExport(descFile, objTitle.Length, "清单"))
+    //{
+    //oxExt.Write(objTitle);
+    //}
 
 
     public class ExcelOpenXml
@@ -51,123 +28,247 @@ namespace ExcelConvertToolsXiongSetup
         public static void Create(string filename, DataSet ds)
         {
             SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Create(filename, SpreadsheetDocumentType.Workbook);
-            WorkbookPart workbookPart = spreadsheetDocument.AddWorkbookPart();
+
+            WorkbookPart workbookpart = spreadsheetDocument.AddWorkbookPart();
             Workbook workbook = new Workbook();
             Sheets sheets = new Sheets();
-            for (int index1 = 0; index1 < ds.Tables.Count; ++index1)
+
+            #region 创建多个 sheet 页
+
+            //创建多个sheet
+            for (int s = 0; s < ds.Tables.Count; s++)
             {
-                DataTable table = ds.Tables[index1];
-                string tableName = table.TableName;
-                WorksheetPart worksheetPart = workbookPart.AddNewPart<WorksheetPart>();
+                DataTable dt = ds.Tables[s];
+                var tname = dt.TableName;
+
+                WorksheetPart worksheetPart = workbookpart.AddNewPart<WorksheetPart>();
                 Worksheet worksheet = new Worksheet();
                 SheetData sheetData = new SheetData();
+
+                //创建 sheet 页
                 Sheet sheet = new Sheet()
                 {
-                    Id = (StringValue)spreadsheetDocument.WorkbookPart.GetIdOfPart((OpenXmlPart)worksheetPart),
-                    SheetId = UInt32Value.FromUInt32((uint)(index1 + 1)),
-                    Name = (StringValue)tableName
+                    //页面关联的 WorksheetPart
+                    Id = spreadsheetDocument.WorkbookPart.GetIdOfPart(worksheetPart),
+                    SheetId = UInt32Value.FromUInt32((uint)s + 1),
+                    Name = tname
                 };
-                sheets.Append((OpenXmlElement)sheet);
-                uint num1 = 1;
-                Row row1 = new Row();
-                int num2 = (int)num1;
-                uint num3 = (uint)(num2 + 1);
-                row1.RowIndex = UInt32Value.FromUInt32((uint)num2);
-                Row row2 = row1;
-                sheetData.Append((OpenXmlElement)row2);
-                for (int index2 = 0; index2 < table.Columns.Count; ++index2)
+                sheets.Append(sheet);
+
+                #region 创建sheet 行
+                Row row;
+                uint rowIndex = 1;
+                //添加表头
+                row = new Row()
                 {
-                    Cell cell = new Cell();
-                    cell.CellValue = new CellValue(table.Columns[index2].ColumnName);
-                    cell.DataType = new EnumValue<CellValues>(CellValues.String);
-                    row2.Append((OpenXmlElement)cell);
+                    RowIndex = UInt32Value.FromUInt32(rowIndex++)
+                };
+                sheetData.Append(row);
+                for (int i = 0; i < dt.Columns.Count; i++)
+                {
+                    Cell newCell = new Cell();
+                    newCell.CellValue = new CellValue(dt.Columns[i].ColumnName);
+                    newCell.DataType = new EnumValue<CellValues>(CellValues.String);
+                    row.Append(newCell);
                 }
-                for (int index2 = 0; index2 < table.Rows.Count; ++index2)
+                //添加内容
+                object val = null;
+                for (int i = 0; i < dt.Rows.Count; i++)
                 {
-                    Row row3 = new Row()
+                    row = new Row()
                     {
-                        RowIndex = UInt32Value.FromUInt32(num3++)
+                        RowIndex = UInt32Value.FromUInt32(rowIndex++)
                     };
-                    sheetData.Append((OpenXmlElement)row3);
-                    for (int index3 = 0; index3 < table.Columns.Count; ++index3)
+                    sheetData.Append(row);
+
+                    for (int j = 0; j < dt.Columns.Count; j++)
                     {
-                        Cell cell = new Cell();
-                        object obj = table.Rows[index2][index3];
-                        cell.CellValue = new CellValue(obj.ToString());
-                        cell.DataType = new EnumValue<CellValues>(CellValues.String);
-                        row3.Append((OpenXmlElement)cell);
+                        Cell newCell = new Cell();
+                        val = dt.Rows[i][j];
+                        newCell.CellValue = new CellValue(val.ToString());
+                        newCell.DataType = new EnumValue<CellValues>(CellValues.String);
+
+                        row.Append(newCell);
                     }
+
                 }
-                worksheet.Append((OpenXmlElement)sheetData);
+                #endregion
+
+                worksheet.Append(sheetData);
                 worksheetPart.Worksheet = worksheet;
                 worksheetPart.Worksheet.Save();
             }
-            workbook.Append((OpenXmlElement)sheets);
-            workbookPart.Workbook = workbook;
-            workbookPart.Workbook.Save();
+            #endregion
+
+            workbook.Append(sheets);
+            workbookpart.Workbook = workbook;
+
+            workbookpart.Workbook.Save();
             spreadsheetDocument.Close();
         }
 
         public static DataTable GetSheet(string filename, string sheetName)
         {
             DataTable dt = new DataTable();
-            using (SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Open(filename, false))
+            using (SpreadsheetDocument document = SpreadsheetDocument.Open(filename, false))
             {
-                WorkbookPart workbookPart = spreadsheetDocument.WorkbookPart;
-                Sheet sheet = workbookPart.Workbook.Descendants<Sheet>().FirstOrDefault<Sheet>(x => sheetName.Length > 0 ? x.Name == sheetName : x.Name.Value.Length > 0);
+                WorkbookPart wbPart = document.WorkbookPart;
+                //通过sheet名查找 sheet页
+                Sheet sheet = wbPart
+                    .Workbook
+                    .Descendants<Sheet>()
+                    .FirstOrDefault(s => s.Name == sheetName);
+
                 if (sheet == null)
+                {
                     throw new ArgumentException("未能找到" + sheetName + " sheet 页");
-                SharedStringTablePart sharedStringTablePart = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault<SharedStringTablePart>();
-                SharedStringTable sharedStringTable = (SharedStringTable)null;
+                }
+
+                //获取Excel中共享表
+                SharedStringTablePart sharedStringTablePart = wbPart
+                    .GetPartsOfType<SharedStringTablePart>()
+                    .FirstOrDefault();
+                SharedStringTable sharedStringTable = null;
                 if (sharedStringTablePart != null)
                     sharedStringTable = sharedStringTablePart.SharedStringTable;
-                Func<Row, int> func = (Func<Row, int>)(r =>
+                #region 构建datatable
+
+                //添加talbe列,返回列数
+                Func<Row, int> addTabColumn = (r) =>
                 {
-                    foreach (Cell element in r.Elements<Cell>())
-                        dt.Columns.Add(ExcelOpenXml.GetCellVal(element, sharedStringTable));
+                    //遍历单元格
+                    foreach (Cell c in r.Elements<Cell>())
+                    {
+                        dt.Columns.Add(GetCellVal(c, sharedStringTable));
+                    }
                     return dt.Columns.Count;
-                });
-                Action<Row> action = (Action<Row>)(r =>
+                };
+                //添加行
+                Action<Row> addTabRow = (r) =>
                 {
-                    DataRow row = dt.NewRow();
-                    int num = 0;
-                    int count = dt.Columns.Count;
-                    foreach (Cell element in r.Elements<Cell>())
+                    DataRow dr = dt.NewRow();
+                    int colIndex = 0;
+                    int colCount = dt.Columns.Count;
+                    //遍历单元格
+                    foreach (Cell c in r.Elements<Cell>())
                     {
-                        if (num < count)
-                            row[num++] = (object)ExcelOpenXml.GetCellVal(element, sharedStringTable);
-                        else
+                        if (colIndex >= colCount)
                             break;
+                        dr[colIndex++] = GetCellVal(c, sharedStringTable);
                     }
-                    dt.Rows.Add(row);
-                });
-                foreach (Row element in (workbookPart.GetPartById((string)sheet.Id) as WorksheetPart).Worksheet.Elements<SheetData>().First<SheetData>().Elements<Row>())
+                    dt.Rows.Add(dr);
+                };
+                #endregion
+
+
+                //通过 sheet.id 查找 WorksheetPart 
+                WorksheetPart worksheetPart
+                    = wbPart.GetPartById(sheet.Id) as WorksheetPart;
+                //查找 sheetdata
+                SheetData sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
+
+                //遍历行
+                foreach (Row r in sheetData.Elements<Row>())
                 {
-                    if ((uint)element.RowIndex == 1U)
+                    //构建table列
+                    if (r.RowIndex == 1)
                     {
-                        int num = func(element);
+                        addTabColumn(r);
+                        continue;
                     }
-                    else
-                        action(element);
+                    //构建table行
+                    addTabRow(r);
                 }
+
             }
             return dt;
         }
 
-        private static string GetCellVal(Cell cell, SharedStringTable sharedStringTable)
+        /// <summary>
+        /// 获取单元格值
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <param name="sharedStringTable"></param>
+        /// <returns></returns>
+        static string GetCellVal(Cell cell, SharedStringTable sharedStringTable)
         {
-            string s = cell.InnerText;
+            var val = cell.InnerText;
+
             if (cell.DataType != null)
             {
-                if (cell.DataType.Value == CellValues.SharedString)
+                switch (cell.DataType.Value)
                 {
-                    if (sharedStringTable != null)
-                        s = sharedStringTable.ElementAt<OpenXmlElement>(int.Parse(s)).InnerText;
+                    //从共享表中获取值
+                    case CellValues.SharedString:
+                        if (sharedStringTable != null)
+                            val = sharedStringTable
+                                .ElementAt(int.Parse(val))
+                                .InnerText;
+                        break;
+                    default:
+                        val = string.Empty;
+                        break;
                 }
-                else
-                    s = cell?.InnerText ?? "";
+
             }
-            return s;
+            return val;
+        }
+
+    }
+
+
+    public class ExcelImport
+    {
+        public static void Import(string path)
+        {
+            DataTable dt = new DataTable();
+
+            using (SpreadsheetDocument spreadSheetDocument = SpreadsheetDocument.Open(path, false))
+            {
+                WorkbookPart workbookPart = spreadSheetDocument.WorkbookPart;
+                IEnumerable<Sheet> sheets = spreadSheetDocument.WorkbookPart.Workbook.GetFirstChild<Sheets>().Elements<Sheet>();
+
+                //string relationshipId = sheets.First().Id.Value = sheets.First(x => x.Name == "TestSheet").Id.Value;
+                string relationshipId = sheets.First().Id.Value;
+                WorksheetPart worksheetPart = (WorksheetPart)spreadSheetDocument.WorkbookPart.GetPartById(relationshipId);
+                Worksheet workSheet = worksheetPart.Worksheet;
+                SheetData sheetData = workSheet.GetFirstChild<SheetData>();
+                Row[] rows = sheetData.Descendants<Row>().ToArray();
+
+                // 设置表头DataTable
+                foreach (Cell cell in rows.ElementAt(0))
+                {
+                    dt.Columns.Add((string)GetCellValue(spreadSheetDocument, cell));
+                }
+
+                // 添加内容
+                for (int rowIndex = 1; rowIndex < rows.Count(); rowIndex++)
+                {
+                    DataRow tempRow = dt.NewRow();
+
+                    for (int i = 0; i < rows[rowIndex].Descendants<Cell>().Count(); i++)
+                    {
+                        tempRow[i] = GetCellValue(spreadSheetDocument, rows[rowIndex].Descendants<Cell>().ElementAt(i));
+                    }
+                    dt.Rows.Add(tempRow);
+                }
+            }
+        }
+
+        public static string GetCellValue(SpreadsheetDocument document, Cell cell)
+        {
+            SharedStringTablePart stringTablePart = document.WorkbookPart.SharedStringTablePart;
+            string value = cell?.CellValue?.InnerXml ?? "";
+
+            if (cell.DataType != null && (cell.DataType.Value == CellValues.SharedString || cell.DataType.Value == CellValues.String || cell.DataType.Value == CellValues.Number))
+            {
+                return stringTablePart.SharedStringTable.ChildElements[Int32.Parse(value)].InnerText;
+            }
+            else //浮点数和日期对应的cell.DataType都为NULL
+            {
+                // DateTime.FromOADate((double.Parse(value)); 如果确定是日期就可以直接用过该方法转换为日期对象，可是无法确定DataType==NULL的时候这个CELL 数据到底是浮点型还是日期.(日期被自动转换为浮点
+                return value;
+            }
         }
     }
 }
