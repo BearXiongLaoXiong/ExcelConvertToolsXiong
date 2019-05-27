@@ -107,7 +107,7 @@ namespace ExcelConvertToolsXiongSetup
             spreadsheetDocument.Close();
         }
 
-        public static DataTable GetSheet(string filename, string sheetName)
+        public static DataTable GetSheet(string filename, string sheetName, int jumpRowIndex = 1)
         {
             DataTable dt = new DataTable();
             using (SpreadsheetDocument document = SpreadsheetDocument.Open(filename, false))
@@ -171,7 +171,7 @@ namespace ExcelConvertToolsXiongSetup
                 foreach (Row r in sheetData.Elements<Row>())
                 {
                     //构建table列
-                    if (r.RowIndex == 1)
+                    if (r.RowIndex == jumpRowIndex)
                     {
                         addTabColumn(r);
                         continue;

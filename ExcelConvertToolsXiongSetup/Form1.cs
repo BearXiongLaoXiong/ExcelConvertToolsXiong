@@ -12,6 +12,7 @@ namespace ExcelConvertToolsXiongSetup
 
         private string _fileName = "";
 
+        private string _ChargeCurrency = "Charge Currency";
         //配置文件Sheet
         private readonly List<Config> _configList = new List<Config>();
         private readonly List<ConvertColumnToRow> _configColumnsList = new List<ConvertColumnToRow>();
@@ -54,7 +55,7 @@ namespace ExcelConvertToolsXiongSetup
             if (_fileName.Length == 0) return;
             textBox1.Text = _fileName;
 
-            string configFile = Environment.CurrentDirectory + "\\列转换配置.xlsx";
+            string configFile = Environment.CurrentDirectory + "\\Config.xlsx";
             if (!File.Exists(configFile))
             {
                 MessageBox.Show(configFile + @"出现配置文件不存在的致命错误,请恢复配置文件后再操作!\r\n");
@@ -65,13 +66,15 @@ namespace ExcelConvertToolsXiongSetup
             DataTable configTable = ExcelOpenXml.GetSheet(configFile, "Sheet1");
             if (configTable == null || configTable.Rows.Count < 1)
             {
-                MessageBox.Show("列转换配置表[Sheet1]表数据不完整,请给出正确格式的配置文件");
+                MessageBox.Show("列转换配置表[Config][Sheet1]表数据不完整,请给出正确格式的配置文件");
                 return;
             }
             for (int i = 0; i < configTable.Columns.Count; i++)
                 _configList.Add(new Config { Dt1 = configTable.Columns[i].ColumnName.Trim(), Dt2 = configTable.Rows[0][i].ToString().Trim() });
 
-            DataTable configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
+            var configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
+            var configMappingPlaceOfPaymentTable = ExcelOpenXml.GetSheet(configFile, "Sheet3").Rows.Cast<DataRow>()
+                                                    .Select(x => new ConvertPlaceOfPaymentMapping { BookingOffice = x[0].ToString().Trim().ToLower(), PlaceOfPayment = x[1].ToString().Trim() }).ToList();
 
             //配置文件Sheet2 数据
             _configColumnsList.AddRange(configMappingTable.Rows.Cast<DataRow>().Select(x => new ConvertColumnToRow { ChargeCurrency = x[0].ToString().Trim(), ChargeCode = x[1].ToString().Trim(), Columns = x[2].ToString().Trim() }));
@@ -85,7 +88,7 @@ namespace ExcelConvertToolsXiongSetup
             }
 
 
-            _dataTable = ExcelOpenXml.GetSheet(_fileName, "Sheet0");
+            _dataTable = ExcelOpenXml.GetSheet(_fileName, "Sheet0", 3);
             if (_dataTable.Rows.Count < 3)
             {
                 MessageBox.Show(@"未读取到数据");
@@ -110,6 +113,14 @@ namespace ExcelConvertToolsXiongSetup
             _targetTable = new DataTable("Sheet1");
             _targetTable = configTable.Clone();
             _targetTable.TableName = "Sheet1";
+
+            var bl1blmanr = 100000;
+            if (!cofingListToLower.Contains(@"blvposno") || !cofingListToLower.Contains("bl nr.") || !cofingListToLower.Contains("bl1blmanr"))
+            {
+                MessageBox.Show($"未在数据源中找到列 [blvposno],[bl nr.],[bl1blmanr],请检查数据格式!");
+                return;
+            }
+
             for (int i = 0; i < _dataTable.Rows.Count; i++)
             {
                 DataRow row = _targetTable.NewRow();
@@ -124,22 +135,38 @@ namespace ExcelConvertToolsXiongSetup
                         }
                     }
                 }
+
+
                 //  Charge Currency	Charge Code 行列转换
-                var targetColumnName = _configColumnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == _dataTable.Rows[i]["Charge Currency"].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == _dataTable.Rows[i]["Charge Code"].ToString().ToLower())?.Columns;
+                var targetColumnName = _configColumnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == _dataTable.Rows[i][_ChargeCurrency].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == _dataTable.Rows[i]["Charge Code"].ToString().ToLower())?.Columns;
                 if (_configList.Select(x => x.Dt1.ToLower()).Count(x => x.Contains(targetColumnName?.ToLower() ?? "abcdefghigk123")) > 0)
                     row[targetColumnName ?? ""] = _dataTable.Rows[i]["Charge Amount"];
                 _targetTable.Rows.Add(row);
 
-                //通过BL nr. 列判断 blvposno的计数,从1开始计数，每行++1 直到[BL nr. 列]和上一行不一致后,重新从1开始计数
-                if (cofingListToLower.Contains(@"blvposno") && cofingListToLower.Contains("bl nr."))
+
+                //通过BL nr. 列判断 blvposno  的计数,从1开始计数，每行++1 直到[BL nr. 列]和上一行不一致后,重新从1开始计数
+                //通过BL nr. 列判断 bl1blmanr 的计数,从1开始计数，每行++1 直到[BL nr. 列]和上一行不一致后,重新从1开始计数 
+                int blvposno = 1;
+                if (i > 0 && i < _dataTable.Rows.Count)
                 {
-                    int blvposno = 1;
-                    if (i > 0 && i < _dataTable.Rows.Count)
-                        blvposno = _targetTable.Rows[i]["BL nr."].ToString().ToLower() == _targetTable.Rows[i - 1]["BL nr."].ToString().ToLower()
-                                    ? int.Parse(_targetTable.Rows[i - 1]["blvposno"].ToString()) + 1
-                                    : 1;
-                    _targetTable.Rows[i]["blvposno"] = blvposno;
+                    bl1blmanr = _targetTable.Rows[i]["BL nr."].ToString().ToLower() == _targetTable.Rows[i - 1]["BL nr."].ToString().ToLower()
+                        ? bl1blmanr
+                        : bl1blmanr + 1;
+                    blvposno = _targetTable.Rows[i]["BL nr."].ToString().ToLower() == _targetTable.Rows[i - 1]["BL nr."].ToString().ToLower()
+                                ? int.Parse(_targetTable.Rows[i - 1]["blvposno"].ToString()) + 1
+                                : 1;
                 }
+                _targetTable.Rows[i]["bl1blmanr"] = bl1blmanr;
+                _targetTable.Rows[i]["blvposno"] = blvposno;
+
+
+                //数据源[Booking Office]转换为[PlaceOfPayment],转换关系在Config.xlsx的Sheet3中
+                var oldPlaceOfPayment = _targetTable.Rows[i]["PlaceOfPayment"].ToString().ToLower();
+                var newPlaceOfPayment = configMappingPlaceOfPaymentTable.FirstOrDefault(x => x.BookingOffice == oldPlaceOfPayment)?.PlaceOfPayment ?? "";
+                if (newPlaceOfPayment != null && newPlaceOfPayment.Length > 0)
+                    _targetTable.Rows[i]["PlaceOfPayment"] = newPlaceOfPayment;
+
+
             }
             dataGridView1.DataSource = configTable;
             dataGridView2.DataSource = _dataTable;
@@ -215,7 +242,7 @@ namespace ExcelConvertToolsXiongSetup
             //  Charge Currency	Charge Code 行列转换
             if (columnName == "charge amount")
             {
-                var targetColumnName = _configColumnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == _dataTable.Rows[e.RowIndex]["Charge Currency"].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == _dataTable.Rows[e.RowIndex]["Charge Code"].ToString().ToLower())?.Columns;
+                var targetColumnName = _configColumnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == _dataTable.Rows[e.RowIndex][_ChargeCurrency].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == _dataTable.Rows[e.RowIndex]["Charge Code"].ToString().ToLower())?.Columns;
                 if (targetColumnName != null && targetColumnName.Length > 0)
                 {
                     dataGridView1.CurrentCell = dataGridView1.Rows[0].Cells[targetColumnName];
@@ -275,6 +302,17 @@ namespace ExcelConvertToolsXiongSetup
         public string ChargeCurrency { get; set; }
         public string ChargeCode { get; set; }
         public string Columns { get; set; }
+    }
 
+    public class ConvertPlaceOfPaymentMapping
+    {
+        /// <summary>
+        /// 数据源
+        /// </summary>
+        public string BookingOffice { get; set; }
+        /// <summary>
+        /// 目标
+        /// </summary>
+        public string PlaceOfPayment { get; set; }
     }
 }
