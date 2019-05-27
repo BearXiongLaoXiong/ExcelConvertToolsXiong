@@ -75,6 +75,14 @@ namespace ExcelConvertToolsXiongSetup
             var configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
             var configMappingPlaceOfPaymentTable = ExcelOpenXml.GetSheet(configFile, "Sheet3").Rows.Cast<DataRow>()
                                                     .Select(x => new ConvertPlaceOfPaymentMapping { BookingOffice = x[0].ToString().Trim().ToLower(), PlaceOfPayment = x[1].ToString().Trim() }).ToList();
+            var configClientTable = ExcelOpenXml.GetSheet(configFile, "Sheet4");
+            if (configClientTable == null || configClientTable.Rows.Count < 1)
+            {
+                MessageBox.Show("列转换配置表[Config][Sheet4]表数据不完整,请给出正确格式的配置文件");
+                return;
+            }
+            int.TryParse(configClientTable.Rows[0][0].ToString(), out int configClientLength);
+            var isHaveExtraLongCliengLenght = true;
 
             //配置文件Sheet2 数据
             _configColumnsList.AddRange(configMappingTable.Rows.Cast<DataRow>().Select(x => new ConvertColumnToRow { ChargeCurrency = x[0].ToString().Trim(), ChargeCode = x[1].ToString().Trim(), Columns = x[2].ToString().Trim() }));
@@ -134,6 +142,18 @@ namespace ExcelConvertToolsXiongSetup
                             row[j] = _dataTable.Rows[i][k];
                         }
                     }
+                }
+
+
+                // Client列超过长度则直接替换为空 configClientLength
+                if ((row["Client"]?.ToString() ?? "").Length > configClientLength)
+                {
+                    if (isHaveExtraLongCliengLenght)
+                    {
+                        MessageBox.Show($@"第{i}行,列[Client]出现超过长度.已替换[{row["Client"]}]为空字符");
+                        isHaveExtraLongCliengLenght = false;
+                    }
+                    row["Client"] = "";
                 }
 
 
@@ -225,7 +245,7 @@ namespace ExcelConvertToolsXiongSetup
 
             for (int i = 0; i < _configList.Count; i++)
             {
-                if (columnName == _configList[i].Dt2.Trim().ToLower())
+                if (columnName == _configList[i].Dt2.Trim().ToLower() && columnName != "charge amount")
                 {
                     dataGridView1.CurrentCell = dataGridView1.Rows[0].Cells[i];
                     dataGridView3.CurrentCell = dataGridView3.Rows[e.RowIndex].Cells[i];
