@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ExcelConvertToolsXiongSetup
 {
@@ -27,6 +28,8 @@ namespace ExcelConvertToolsXiongSetup
 
         public static void Create(string filename, DataSet ds)
         {
+            Regex regex = new Regex(@"^(-?\d+)(\.\d+)?$");
+
             SpreadsheetDocument spreadsheetDocument = SpreadsheetDocument.Create(filename, SpreadsheetDocumentType.Workbook);
 
             WorkbookPart workbookpart = spreadsheetDocument.AddWorkbookPart();
@@ -85,9 +88,17 @@ namespace ExcelConvertToolsXiongSetup
                     {
                         Cell newCell = new Cell();
                         val = dt.Rows[i][j];
-                        newCell.CellValue = new CellValue(val.ToString());
-                        newCell.DataType = new EnumValue<CellValues>(CellValues.String);
-
+                        var str = (val?.ToString() ?? "").Trim();
+                        if (str.Length == 0 || regex.IsMatch(str))
+                        {
+                            newCell.CellValue = new CellValue(str);
+                            newCell.DataType = new EnumValue<CellValues>(CellValues.Number);
+                        }
+                        else
+                        {
+                            newCell.CellValue = new CellValue(val.ToString());
+                            newCell.DataType = new EnumValue<CellValues>(CellValues.String);
+                        }
                         row.Append(newCell);
                     }
 

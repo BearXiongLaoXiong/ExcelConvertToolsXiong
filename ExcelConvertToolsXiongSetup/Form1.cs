@@ -61,6 +61,8 @@ namespace ExcelConvertToolsXiongSetup
                 MessageBox.Show(configFile + @"出现配置文件不存在的致命错误,请恢复配置文件后再操作!\r\n");
                 return;
             }
+
+
             //try
             //{
             DataTable configTable = ExcelOpenXml.GetSheet(configFile, "Sheet1");
