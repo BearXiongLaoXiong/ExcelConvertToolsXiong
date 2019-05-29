@@ -68,7 +68,7 @@ namespace ExcelConvertToolsXiongSetup
             DataTable configTable = ExcelOpenXml.GetSheet(configFile, "Sheet1");
             if (configTable == null || configTable.Rows.Count < 1)
             {
-                MessageBox.Show("列转换配置表[Config][Sheet1]表数据不完整,请给出正确格式的配置文件");
+                MessageBox.Show(@"列转换配置表[Config][Sheet1]表数据不完整,请给出正确格式的配置文件");
                 return;
             }
             for (int i = 0; i < configTable.Columns.Count; i++)
@@ -80,7 +80,7 @@ namespace ExcelConvertToolsXiongSetup
             var configClientTable = ExcelOpenXml.GetSheet(configFile, "Sheet4");
             if (configClientTable == null || configClientTable.Rows.Count < 1)
             {
-                MessageBox.Show("列转换配置表[Config][Sheet4]表数据不完整,请给出正确格式的配置文件");
+                MessageBox.Show(@"列转换配置表[Config][Sheet4]表数据不完整,请给出正确格式的配置文件");
                 return;
             }
             int.TryParse(configClientTable.Rows[0][0].ToString(), out int configClientLength);
@@ -185,7 +185,7 @@ namespace ExcelConvertToolsXiongSetup
                 //数据源[Booking Office]转换为[PlaceOfPayment],转换关系在Config.xlsx的Sheet3中
                 var oldPlaceOfPayment = _targetTable.Rows[i]["PlaceOfPayment"].ToString().ToLower();
                 var newPlaceOfPayment = configMappingPlaceOfPaymentTable.FirstOrDefault(x => x.BookingOffice == oldPlaceOfPayment)?.PlaceOfPayment ?? "";
-                if (newPlaceOfPayment != null && newPlaceOfPayment.Length > 0)
+                if (newPlaceOfPayment.Length > 0)
                     _targetTable.Rows[i]["PlaceOfPayment"] = newPlaceOfPayment;
 
 
