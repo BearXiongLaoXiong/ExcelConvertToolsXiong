@@ -104,7 +104,7 @@ namespace ExcelConvertToolsXiongSetup
                 MessageBox.Show(@"未读取到数据");
                 return;
             }
-
+            //Incl. OFT.
             for (int i = 0; i < _dataTable.Columns.Count; i++)
             {
                 string row0 = _dataTable.Rows[0][i].ToString().Trim();
@@ -124,12 +124,20 @@ namespace ExcelConvertToolsXiongSetup
             _targetTable = configTable.Clone();
             _targetTable.TableName = "Sheet1";
 
-            var bl1blmanr = 100000;
+            var bl1blmanr = 1000000;
             if (!cofingListToLower.Contains(@"blvposno") || !cofingListToLower.Contains("bl nr.") || !cofingListToLower.Contains("bl1blmanr"))
             {
                 MessageBox.Show($"未在数据源中找到列 [blvposno],[bl nr.],[bl1blmanr],请检查数据格式!");
                 return;
             }
+
+            //新需求.只有[Incl. OFT.]值为N才计算,其他值的行,则忽略
+            var table = new DataTable("Sheet0");
+            table = _dataTable.Clone();
+            for (int i = 0; i < _dataTable.Rows.Count; i++)
+                if (_dataTable.Rows[i]["Incl. OFT."].ToString().Trim().ToUpper() == "N")
+                    table.Rows.Add(_dataTable.Rows[i].ItemArray);
+            _dataTable = table;
 
             for (int i = 0; i < _dataTable.Rows.Count; i++)
             {
@@ -178,7 +186,9 @@ namespace ExcelConvertToolsXiongSetup
                                 ? int.Parse(_targetTable.Rows[i - 1]["blvposno"].ToString()) + 1
                                 : 1;
                 }
-                _targetTable.Rows[i]["bl1blmanr"] = bl1blmanr;
+                //新需求:为防止重复,直接用[BL nr.]列 替换 [bl1blmanr]列
+                //_targetTable.Rows[i]["bl1blmanr"] = bl1blmanr;
+                _targetTable.Rows[i]["bl1blmanr"] = _targetTable.Rows[i]["BL nr."];
                 _targetTable.Rows[i]["blvposno"] = blvposno;
 
 
