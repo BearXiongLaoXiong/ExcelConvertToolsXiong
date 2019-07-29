@@ -5,6 +5,13 @@ VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelConvertToolsXiongSetup", "ExcelConvertToolsXiongSetup\ExcelConvertToolsXiongSetup.csproj", "{CB2A87AB-4DE7-4B64-99E9-08B073938DA5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelConvertTools2", "ExcelConvertTools2\ExcelConvertTools2.csproj", "{CA9CFE14-235C-4F4C-AD08-CA839C261D19}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{7D02DD93-1F40-4F8B-8D3B-403A790153A4}"
+	ProjectSection(SolutionItems) = preProject
+		Lib\DocumentFormat.OpenXml.dll = Lib\DocumentFormat.OpenXml.dll
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +22,10 @@ Global
 		{CB2A87AB-4DE7-4B64-99E9-08B073938DA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB2A87AB-4DE7-4B64-99E9-08B073938DA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB2A87AB-4DE7-4B64-99E9-08B073938DA5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

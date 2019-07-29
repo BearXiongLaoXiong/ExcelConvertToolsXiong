@@ -76,7 +76,7 @@ namespace ExcelConvertToolsXiongSetup
 
             var configMappingTable = ExcelOpenXml.GetSheet(configFile, "Sheet2");
             var configMappingPlaceOfPaymentTable = ExcelOpenXml.GetSheet(configFile, "Sheet3").Rows.Cast<DataRow>()
-                                                    .Select(x => new ConvertPlaceOfPaymentMapping { BookingOffice = x[0].ToString().Trim().ToLower(), PlaceOfPayment = x[1].ToString().Trim() }).ToList();
+                                                    .Select(x => new ConvertPlaceOfPaymentMapping { CollectionOffice = x[0].ToString().Trim().ToLower(), PlaceOfPayment = x[1].ToString().Trim() }).ToList();
             var configClientTable = ExcelOpenXml.GetSheet(configFile, "Sheet4");
             if (configClientTable == null || configClientTable.Rows.Count < 1)
             {
@@ -194,7 +194,7 @@ namespace ExcelConvertToolsXiongSetup
 
                 //数据源[Booking Office]转换为[PlaceOfPayment],转换关系在Config.xlsx的Sheet3中
                 var oldPlaceOfPayment = _targetTable.Rows[i]["PlaceOfPayment"].ToString().ToLower();
-                var newPlaceOfPayment = configMappingPlaceOfPaymentTable.FirstOrDefault(x => x.BookingOffice == oldPlaceOfPayment)?.PlaceOfPayment ?? "";
+                var newPlaceOfPayment = configMappingPlaceOfPaymentTable.FirstOrDefault(x => x.CollectionOffice == oldPlaceOfPayment)?.PlaceOfPayment ?? "";
                 if (newPlaceOfPayment.Length > 0)
                     _targetTable.Rows[i]["PlaceOfPayment"] = newPlaceOfPayment;
 
@@ -341,7 +341,7 @@ namespace ExcelConvertToolsXiongSetup
         /// <summary>
         /// 数据源
         /// </summary>
-        public string BookingOffice { get; set; }
+        public string CollectionOffice { get; set; }
         /// <summary>
         /// 目标
         /// </summary>
