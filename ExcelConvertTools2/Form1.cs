@@ -214,6 +214,10 @@ namespace ExcelConvertTools2
                 {
                     var key = _dataTable.Rows[i]["Collection Office"].ToString().Trim();
                     var polCode = _dataTable.Rows[i]["POL Code"].ToString().Trim();
+                    //if (_dataTable.Rows[i]["B/L No."].ToString().Trim() == "NG11900810")
+                    //{
+                    //    Console.WriteLine(key);
+                    //}
                     if (!collectionOfficeDict.ContainsKey(key)) continue;
                     if (collectionOfficeDict[key].Count > 0)
                     {
