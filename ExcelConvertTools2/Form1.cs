@@ -213,7 +213,9 @@ namespace ExcelConvertTools2
                 if (_dataTable.Rows[i]["Incl. OFT."].ToString().Trim().ToUpper() == "N" && _configCollectionOfficeCheckedList.Contains(_dataTable.Rows[i]["Collection Office"].ToString().Trim()) && _configCurrencyCheckedList.Contains(_dataTable.Rows[i]["Charge Currency"].ToString().Trim()))
                 {
                     var key = _dataTable.Rows[i]["Collection Office"].ToString().Trim();
-                    var polCode = _dataTable.Rows[i]["POL Code"].ToString().Trim();
+                    //var polCode = _dataTable.Rows[i]["POL Code"].ToString().Trim();
+                    //修改 [POL Code] 为[Trunk POL]
+                    var polCode = _dataTable.Rows[i]["Trunk POL"].ToString().Trim();
                     //if (_dataTable.Rows[i]["B/L No."].ToString().Trim() == "NG11900810")
                     //{
                     //    Console.WriteLine(key);
