@@ -259,8 +259,9 @@ namespace ExcelConvertTools2
             //chargeCode的内容变为列
             var chargeCodeUsList = table.Select("[Charge Currency] = 'USD'").Select(x => x.Field<string>("Charge Code"))?.Distinct()?.ToList();
             var chargeCodeCnList = table.Select("[Charge Currency] = 'CNY'").Select(x => x.Field<string>("Charge Code"))?.Distinct()?.ToList();
+            if (chargeCodeUsList?.Count > 0 && chargeCodeUsList.Contains("LCH")) chargeCodeUsList.Remove("LCH");
 
-            var targetTableColumnsNamesList = table1.Columns.Cast<DataColumn>().Select(x => x.ColumnName)?.ToList();
+                 var targetTableColumnsNamesList = table1.Columns.Cast<DataColumn>().Select(x => x.ColumnName)?.ToList();
             var targetOldTable = targetTableColumnsNamesList.ToArray();
             if (chargeCodeUsList?.Count + chargeCodeCnList?.Count < 1 || targetTableColumnsNamesList?.Count < 1)
             {
