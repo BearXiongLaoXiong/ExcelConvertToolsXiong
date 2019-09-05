@@ -215,7 +215,8 @@ namespace ExcelConvertTools2
                     var key = _dataTable.Rows[i]["Collection Office"].ToString().Trim();
                     //var polCode = _dataTable.Rows[i]["POL Code"].ToString().Trim();
                     //修改 [POL Code] 为[Trunk POL]
-                    var polCode = _dataTable.Rows[i]["Trunk POL"].ToString().Trim();
+                    //修改 [POL Code] 为[B/L No.]前三位
+                    var polCode = _dataTable.Rows[i]["B/L No."].ToString().Trim().Substring(0, 3);
                     //if (_dataTable.Rows[i]["B/L No."].ToString().Trim() == "NG11900810")
                     //{
                     //    Console.WriteLine(key);
@@ -252,7 +253,7 @@ namespace ExcelConvertTools2
 
             _targetTable = table1;
 
-
+            //"8S8Otakt"
 
             _targetTable = new DataTable("Sheet1");
             //_targetTable = table1.Clone();
@@ -263,7 +264,7 @@ namespace ExcelConvertTools2
             var chargeCodeCnList = table.Select("[Charge Currency] = 'CNY'").Select(x => x.Field<string>("Charge Code"))?.Distinct()?.ToList();
             if (chargeCodeUsList?.Count > 0 && chargeCodeUsList.Contains("LCH")) chargeCodeUsList.Remove("LCH");
 
-                 var targetTableColumnsNamesList = table1.Columns.Cast<DataColumn>().Select(x => x.ColumnName)?.ToList();
+            var targetTableColumnsNamesList = table1.Columns.Cast<DataColumn>().Select(x => x.ColumnName)?.ToList();
             var targetOldTable = targetTableColumnsNamesList.ToArray();
             if (chargeCodeUsList?.Count + chargeCodeCnList?.Count < 1 || targetTableColumnsNamesList?.Count < 1)
             {
@@ -324,8 +325,31 @@ namespace ExcelConvertTools2
                         item.Unit = units[0];
                 }
 
+                //按照箱型分组
+                if(checkBox1.Checked)
+                {
+                    foreach (var unit in units)
+                    {
+                        var row = _targetTable.NewRow();
+                        foreach (var columnName in targetOldTable)
+                        {
+                            row[columnName] = rows[0][columnName];
+                        }
 
-                foreach (var unit in units)
+                        var unitEqualsDatas = datas.Where(x => x.Unit == unit).ToList();
+
+                        foreach (var data in unitEqualsDatas)
+                            row[data.Code] = data.Amount;
+                        row["Us Sum"] = unitEqualsDatas.Where(x => x.Currency == "USD").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                        row["Cn Sum"] = unitEqualsDatas.Where(x => x.Currency == "CNY").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                        row["Rated As"] = unitEqualsDatas.FirstOrDefault()?.Rated;
+                        row["Unit"] = unit;
+                        row["Charge Amount"] = unitEqualsDatas.Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                        _targetTable.Rows.Add(row);
+                    }
+
+                }
+                else//不按照箱型分组
                 {
                     var row = _targetTable.NewRow();
                     foreach (var columnName in targetOldTable)
@@ -333,18 +357,17 @@ namespace ExcelConvertTools2
                         row[columnName] = rows[0][columnName];
                     }
 
-                    var unitEqualsDatas = datas.Where(x => x.Unit == unit).ToList();
+                    //var unitEqualsDatas = datas.Where(x => x.Unit == unit).ToList();
 
-                    foreach (var data in unitEqualsDatas)
+                    foreach (var data in datas)
                         row[data.Code] = data.Amount;
-                    row["Us Sum"] = unitEqualsDatas.Where(x => x.Currency == "USD").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
-                    row["Cn Sum"] = unitEqualsDatas.Where(x => x.Currency == "CNY").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
-                    row["Rated As"] = unitEqualsDatas.FirstOrDefault()?.Rated;
-                    row["Unit"] = unit;
-                    row["Charge Amount"] = unitEqualsDatas.Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                    row["Us Sum"] = datas.Where(x => x.Currency == "USD").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                    row["Cn Sum"] = datas.Where(x => x.Currency == "CNY").Sum(x => Convert.ToDecimal(x.Amount)).ToString();
+                    row["Rated As"] = datas.FirstOrDefault()?.Rated;
+                    row["Unit"] = units.FirstOrDefault();
+                    row["Charge Amount"] = datas.Sum(x => Convert.ToDecimal(x.Amount)).ToString();
                     _targetTable.Rows.Add(row);
                 }
-
             }
 
             dataGridView1.DataSource = configTable;

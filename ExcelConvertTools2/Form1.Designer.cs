@@ -46,6 +46,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.textBox1 = new System.Windows.Forms.TextBox();
+            this.checkBox1 = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView3)).BeginInit();
@@ -253,6 +254,7 @@
             // panel1
             // 
             this.panel1.Controls.Add(this.textBox1);
+            this.panel1.Controls.Add(this.checkBox1);
             this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.button1);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Top;
@@ -267,12 +269,23 @@
             // 
             this.textBox1.BackColor = System.Drawing.Color.OldLace;
             this.textBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.textBox1.Location = new System.Drawing.Point(472, 10);
+            this.textBox1.Location = new System.Drawing.Point(658, 10);
             this.textBox1.Margin = new System.Windows.Forms.Padding(6);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(1089, 51);
+            this.textBox1.Size = new System.Drawing.Size(903, 51);
             this.textBox1.TabIndex = 2;
+            // 
+            // checkBox1
+            // 
+            this.checkBox1.AutoSize = true;
+            this.checkBox1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.checkBox1.Location = new System.Drawing.Point(472, 10);
+            this.checkBox1.Name = "checkBox1";
+            this.checkBox1.Size = new System.Drawing.Size(186, 51);
+            this.checkBox1.TabIndex = 3;
+            this.checkBox1.Text = "按照箱型分组";
+            this.checkBox1.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
@@ -315,6 +328,7 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.CheckedListBox CheckedListBoxCurrency1;
         private System.Windows.Forms.CheckedListBox checkedListBoxPolCode1;
+        private System.Windows.Forms.CheckBox checkBox1;
     }
 }
 

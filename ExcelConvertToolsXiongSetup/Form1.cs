@@ -170,7 +170,11 @@ namespace ExcelConvertToolsXiongSetup
                 //  Charge Currency	Charge Code 行列转换
                 var targetColumnName = _configColumnsList.FirstOrDefault(x => x.ChargeCurrency.ToLower() == _dataTable.Rows[i][_ChargeCurrency].ToString().Trim().ToLower() && x.ChargeCode.ToLower() == _dataTable.Rows[i]["Charge Code"].ToString().ToLower())?.Columns;
                 if (_configList.Select(x => x.Dt1.ToLower()).Count(x => x.Contains(targetColumnName?.ToLower() ?? "abcdefghigk123")) > 0)
-                    row[targetColumnName ?? ""] = _dataTable.Rows[i]["Charge Amount"];
+                {
+                    decimal.TryParse(_dataTable.Rows[i]["Charge Amount"]?.ToString() ?? "0", out decimal amount);
+                    decimal.TryParse(row[targetColumnName ?? ""]?.ToString() ?? "0", out decimal value);
+                    row[targetColumnName ?? ""] = value + amount;
+                }
                 _targetTable.Rows.Add(row);
 
 
