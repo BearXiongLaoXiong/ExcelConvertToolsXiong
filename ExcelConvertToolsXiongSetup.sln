@@ -12,6 +12,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{7D02DD93-1F4
 		Lib\DocumentFormat.OpenXml.dll = Lib\DocumentFormat.OpenXml.dll
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelCompare", "ExcelCompare\ExcelCompare.csproj", "{1C6C4339-851C-4FEA-B58B-F59DBA8E9C6A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ExcelCompareCore", "ExcelCompareCore\ExcelCompareCore.csproj", "{EF34623D-9427-4B9B-8F85-C642BADE5393}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +30,14 @@ Global
 		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA9CFE14-235C-4F4C-AD08-CA839C261D19}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C6C4339-851C-4FEA-B58B-F59DBA8E9C6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C6C4339-851C-4FEA-B58B-F59DBA8E9C6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C6C4339-851C-4FEA-B58B-F59DBA8E9C6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C6C4339-851C-4FEA-B58B-F59DBA8E9C6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF34623D-9427-4B9B-8F85-C642BADE5393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF34623D-9427-4B9B-8F85-C642BADE5393}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF34623D-9427-4B9B-8F85-C642BADE5393}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF34623D-9427-4B9B-8F85-C642BADE5393}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
